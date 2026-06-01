@@ -83,10 +83,31 @@ function Stars({ count }: { count: number }) {
   );
 }
 
+const PHONE = "79683858595";
+
+function sendToWhatsApp(name: string, phone: string, type: string, comment: string) {
+  const text = encodeURIComponent(
+    `📋 Новая заявка с сайта\n\n👤 Имя: ${name}\n📞 Телефон: ${phone}\n🏠 Объект: ${type || "не указан"}\n💬 Комментарий: ${comment || "—"}`
+  );
+  window.open(`https://wa.me/${PHONE}?text=${text}`, "_blank");
+}
+
+function sendToTelegram(name: string, phone: string, type: string, comment: string) {
+  const text = encodeURIComponent(
+    `📋 Новая заявка с сайта\n\n👤 Имя: ${name}\n📞 Телефон: ${phone}\n🏠 Объект: ${type || "не указан"}\n💬 Комментарий: ${comment || "—"}`
+  );
+  window.open(`https://t.me/+${PHONE}?text=${text}`, "_blank");
+}
+
 export default function Index() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formType, setFormType] = useState("");
+  const [formComment, setFormComment] = useState("");
+  const [sent, setSent] = useState(false);
 
   const aboutSection = useInView();
   const servicesSection = useInView();
@@ -386,40 +407,82 @@ export default function Index() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <div className="bg-white p-8 rounded border border-gray-100 shadow-sm">
               <h3 className="text-xl font-bold text-[#121212] mb-6 uppercase" style={{ fontFamily: "'Oswald', sans-serif", letterSpacing: "0.05em" }}>Заявка на расчёт</h3>
-              <form className="flex flex-col gap-4" onSubmit={e => e.preventDefault()}>
-                <input
-                  type="text"
-                  placeholder="Ваше имя"
-                  className="border border-gray-200 rounded px-4 py-3 text-sm focus:outline-none focus:border-[color:var(--gold)] transition-colors"
-                />
-                <input
-                  type="tel"
-                  placeholder="Телефон"
-                  className="border border-gray-200 rounded px-4 py-3 text-sm focus:outline-none focus:border-[color:var(--gold)] transition-colors"
-                />
-                <select className="border border-gray-200 rounded px-4 py-3 text-sm text-gray-500 focus:outline-none focus:border-[color:var(--gold)] transition-colors bg-white">
-                  <option value="">Тип объекта</option>
-                  <option>Квартира</option>
-                  <option>Коммерческое помещение</option>
-                  <option>Частный дом</option>
-                  <option>Другое</option>
-                </select>
-                <textarea
-                  rows={3}
-                  placeholder="Опишите задачу (необязательно)"
-                  className="border border-gray-200 rounded px-4 py-3 text-sm focus:outline-none focus:border-[color:var(--gold)] transition-colors resize-none"
-                />
-                <button type="submit" className="shimmer-btn text-[#121212] font-bold py-4 rounded uppercase tracking-wider text-sm" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                  Отправить заявку
-                </button>
-                <p className="text-[#aaa] text-xs text-center">Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности</p>
-              </form>
+              {sent ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-4 animate-fade-in">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, var(--gold-dark), var(--gold))" }}>
+                    <Icon name="Check" size={28} className="text-[#121212]" />
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold text-[#121212] text-lg" style={{ fontFamily: "'Oswald', sans-serif" }}>Заявка отправлена!</div>
+                    <p className="text-[#888] text-sm mt-1">Мы свяжемся с вами в течение 30 минут</p>
+                  </div>
+                  <button onClick={() => setSent(false)} className="text-gold text-sm underline mt-2">Отправить ещё одну</button>
+                </div>
+              ) : (
+                <form className="flex flex-col gap-4" onSubmit={e => e.preventDefault()}>
+                  <input
+                    type="text"
+                    placeholder="Ваше имя *"
+                    value={formName}
+                    onChange={e => setFormName(e.target.value)}
+                    className="border border-gray-200 rounded px-4 py-3 text-sm focus:outline-none focus:border-[color:var(--gold)] transition-colors"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Телефон *"
+                    value={formPhone}
+                    onChange={e => setFormPhone(e.target.value)}
+                    className="border border-gray-200 rounded px-4 py-3 text-sm focus:outline-none focus:border-[color:var(--gold)] transition-colors"
+                  />
+                  <select
+                    value={formType}
+                    onChange={e => setFormType(e.target.value)}
+                    className="border border-gray-200 rounded px-4 py-3 text-sm text-gray-500 focus:outline-none focus:border-[color:var(--gold)] transition-colors bg-white"
+                  >
+                    <option value="">Тип объекта</option>
+                    <option>Квартира</option>
+                    <option>Коммерческое помещение</option>
+                    <option>Частный дом</option>
+                    <option>Другое</option>
+                  </select>
+                  <textarea
+                    rows={3}
+                    placeholder="Опишите задачу (необязательно)"
+                    value={formComment}
+                    onChange={e => setFormComment(e.target.value)}
+                    className="border border-gray-200 rounded px-4 py-3 text-sm focus:outline-none focus:border-[color:var(--gold)] transition-colors resize-none"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      disabled={!formName || !formPhone}
+                      onClick={() => { sendToWhatsApp(formName, formPhone, formType, formComment); setSent(true); }}
+                      className="flex items-center justify-center gap-2 py-3.5 rounded font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: "#25D366", color: "white", fontFamily: "'Oswald', sans-serif" }}
+                    >
+                      <Icon name="MessageCircle" size={16} />
+                      WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!formName || !formPhone}
+                      onClick={() => { sendToTelegram(formName, formPhone, formType, formComment); setSent(true); }}
+                      className="flex items-center justify-center gap-2 py-3.5 rounded font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: "#2AABEE", color: "white", fontFamily: "'Oswald', sans-serif" }}
+                    >
+                      <Icon name="Send" size={16} />
+                      Telegram
+                    </button>
+                  </div>
+                  <p className="text-[#aaa] text-xs text-center">Заполните имя и телефон, затем выберите удобный мессенджер</p>
+                </form>
+              )}
             </div>
 
             <div className="flex flex-col gap-4">
               {[
-                { icon: "Phone", label: "Телефон", value: "+7 (XXX) XXX-XX-XX", hint: "Звонки с 8:00 до 21:00" },
-                { icon: "MessageCircle", label: "WhatsApp / Telegram", value: "+7 (XXX) XXX-XX-XX", hint: "Ответим в течение 15 минут" },
+                { icon: "Phone", label: "Телефон", value: "+7 (968) 385-85-95", hint: "Звонки с 8:00 до 21:00" },
+                { icon: "MessageCircle", label: "WhatsApp / Telegram", value: "+7 (968) 385-85-95", hint: "Ответим в течение 15 минут" },
                 { icon: "Mail", label: "Email", value: "info@malarnyaliga.ru", hint: "Для коммерческих запросов" },
                 { icon: "MapPin", label: "Регион работы", value: "Москва и область", hint: "Выезжаем на объекты до 100 км от МКАД" },
               ].map((c, i) => (
